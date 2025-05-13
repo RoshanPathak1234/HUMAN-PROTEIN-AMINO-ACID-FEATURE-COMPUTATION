@@ -4,6 +4,7 @@ from itertools import product
 import os
 import logging
 from collections import Counter
+from Bio.SeqUtils.ProtParam import ProteinAnalysis
 
 logging.basicConfig(
     level=logging.INFO,
@@ -156,6 +157,26 @@ def PCP(sequence):
     
     return composition
 
+
+
+def Biopython_Features(sequence):
+    try:
+        analysis = ProteinAnalysis(sequence)
+
+        return {
+            "GRAVY": analysis.gravy(),
+            "Aromaticity": analysis.aromaticity(),
+            "Isoelectric_Point": analysis.isoelectric_point()
+        }
+    except Exception as e:
+        logging.warning(f"Error computing Biopython features for sequence {sequence[:10]}: {e}")
+        return {
+            "GRAVY": None,
+            "Aromaticity": None,
+            "Isoelectric_Point": None
+        }
+
+
 def compute_protein_feature(dataset_path, protein_info_path, out_file):
     global output_file
     global amino_symbol, amino_atoms, amino_atom_composition , bonds_data, physio_chemical_properties
@@ -188,9 +209,9 @@ def compute_protein_feature(dataset_path, protein_info_path, out_file):
         df = pd.read_csv(dataset_path)
 
     df = compute_feature_comp(df,"Mono_Amino_Comp_1", PolyP_Comp, 1, 1)
-    df = compute_feature_comp(df,"Di_Amino_Comp_1", PolyP_Comp, 2, 1)
-    df = compute_feature_comp(df,"Di_Amino_Comp_2", PolyP_Comp, 2, 2)
-    df = compute_feature_comp(df,"Di_Amino_Comp_3", PolyP_Comp, 2, 3)
+    # df = compute_feature_comp(df,"Di_Amino_Comp_1", PolyP_Comp, 2, 1)
+    # df = compute_feature_comp(df,"Di_Amino_Comp_2", PolyP_Comp, 2, 2)
+    # df = compute_feature_comp(df,"Di_Amino_Comp_3", PolyP_Comp, 2, 3)
 
     # df = compute_feature_comp(df,"Tri_Amino_Comp_1", PolyP_Comp, 3, 1)
     # df = compute_feature_comp(df,"Tri_Amino_Comp_2", PolyP_Comp, 3, 2)
@@ -198,7 +219,8 @@ def compute_protein_feature(dataset_path, protein_info_path, out_file):
     # df = compute_feature_comp(df,"Tetra_Amino_Comp_2", PolyP_Comp, 4, 2)
     # df = compute_feature_comp(df,"Penta_Amino_Comp_1", PolyP_Comp, 5, 1)
     # df = compute_feature_comp(df,"Penta_Amino_Comp_2", PolyP_Comp, 5, 2)
-    
+
+    df = compute_feature_comp(df, "Biopython_Features", Biopython_Features)    
     df = compute_feature_comp(df,"ATC_Values", ATC)
     df = compute_feature_comp(df, "Bond_Composition", compute_bond_composition)
     df = compute_feature_comp(df, "physio_chemical_properties", PCP)
